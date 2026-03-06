@@ -36,19 +36,32 @@ export const googleAIService = {
   },
 
   async getSchemes(businessType: string, industry: string, location: string) {
-    const prompt = `As an expert on Indian government schemes for MSMEs, provide a detailed list of relevant schemes for:
+    const prompt = `As an expert on Indian government schemes for MSMEs, provide a comprehensive list of relevant schemes for:
 - Business Type: ${businessType}
 - Industry: ${industry}
 - Location: ${location}
 
-For each scheme, provide:
-1. Scheme name
-2. Brief description
-3. Eligibility criteria
-4. Benefits
-5. How to apply
+For each scheme, provide in this exact format:
 
-Focus on currently active schemes from Ministry of MSME, state governments, and relevant ministries.`;
+**[Scheme Name]**
+📋 Description: [Brief description]
+✅ Eligibility: [Key eligibility criteria]
+💰 Benefits: [Financial benefits, subsidies, or support provided]
+📞 Contact: [Ministry/Department name]
+🔗 Website: [Official website URL if available, or mention "Visit msme.gov.in or respective ministry website"]
+📝 How to Apply: [Step-by-step application process]
+
+---
+
+Include:
+1. Central Government schemes (Ministry of MSME, Ministry of Commerce, etc.)
+2. State-specific schemes for ${location}
+3. Industry-specific schemes for ${industry}
+4. Credit/loan schemes (MUDRA, CGTMSE, etc.)
+5. Technology/innovation schemes
+6. Export promotion schemes (if applicable)
+
+Provide at least 5-8 relevant schemes with complete details and official website links where available.`;
 
     return this.chat([{ role: 'user', text: prompt }]);
   }
