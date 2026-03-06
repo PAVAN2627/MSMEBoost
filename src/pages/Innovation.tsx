@@ -3,11 +3,16 @@ import { motion } from "framer-motion";
 import { Lightbulb, Rocket, Cpu, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { innovationService } from "@/services/innovationService";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const statusColor = (s: string) => {
   if (s === "Completed") return "bg-success/10 text-success border-success/20";
@@ -18,8 +23,17 @@ const statusColor = (s: string) => {
 
 const Innovation = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<any[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Form state
+  const [projectName, setProjectName] = useState("");
+  const [category, setCategory] = useState("");
+  const [status, setStatus] = useState("Planning");
+  const [progress, setProgress] = useState("0");
 
   useEffect(() => {
     if (!user) return;
@@ -32,6 +46,52 @@ const Innovation = () => {
 
     fetchData();
   }, [user]);
+
+  const handleCreateProject = async () => {
+    if (!projectName || !category) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    const { id, error } = await innovationService.createProject({
+      userId: user!.uid,
+      name: projectName,
+      category,
+      status: status as any,
+      progress: parseInt(progress),
+      startDate: new Date(),
+      targetDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
+    });
+
+    setSaving(false);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Project created successfully!",
+      });
+      setDialogOpen(false);
+      // Reset form
+      setProjectName("");
+      setCategory("");
+      setStatus("Planning");
+      setProgress("0");
+      // Refresh projects
+      const { projects: projectData } = await innovationService.getProjects(user!.uid);
+      if (projectData) setProjects(projectData);
+    }
+  };
 
   const activeProjects = projects.filter(p => p.status !== 'Completed').length;
   const avgProgress = projects.length > 0 
@@ -62,9 +122,84 @@ const Innovation = () => {
           <h1 className="font-display text-2xl font-bold text-foreground">Innovation Tracker</h1>
           <p className="text-sm text-muted-foreground">Track R&D projects and technology adoption</p>
         </div>
-        <Button className="gradient-primary text-primary-foreground border-0 gap-2">
-          <Plus className="h-4 w-4" /> New Project
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="gradient-primary text-primary-foreground border-0 gap-2">
+              <Plus className="h-4 w-4" /> New Project
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Innovation Project</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Project Name *</Label>
+                <Input
+                  id="name"
+                  placeholder="e.g., AI-powered Quality Control"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Category *</Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Automation">Automation</SelectItem>
+                    <SelectItem value="AI/ML">AI/ML</SelectItem>
+                    <SelectItem value="IoT">IoT</SelectItem>
+                    <SelectItem value="Process Improvement">Process Improvement</SelectItem>
+                    <SelectItem value="Product Development">Product Development</SelectItem>
+                    <SelectItem value="Technology Upgrade">Technology Upgrade</SelectItem>
+                    <SelectItem value="R&D">R&D</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Planning">Planning</SelectItem>
+                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="R&D">R&D</SelectItem>
+                    <SelectItem value="Completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="progress">Progress (%)</Label>
+                <Input
+                  id="progress"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={progress}
+                  onChange={(e) => setProgress(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                className="gradient-primary text-primary-foreground border-0"
+                onClick={handleCreateProject}
+                disabled={saving}
+              >
+                {saving ? "Creating..." : "Create Project"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Score + Stats */}

@@ -3,6 +3,10 @@ import { motion } from "framer-motion";
 import { Calendar, Plus, AlertTriangle, CheckCircle2, Clock, Package, Wrench, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -11,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { productionService, ProductionOrder } from "@/services/productionService";
 import { analyticsService, MachineData } from "@/services/analyticsService";
+import { useToast } from "@/hooks/use-toast";
 
 const bottlenecks = [
   { area: "CNC Lathe Station", issue: "Queue buildup — 4 jobs waiting", severity: "high" },
@@ -26,9 +31,20 @@ const statusBadge = (s: string) => {
 
 const Production = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [orders, setOrders] = useState<ProductionOrder[]>([]);
   const [machines, setMachines] = useState<MachineData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Form state
+  const [orderId, setOrderId] = useState("");
+  const [customer, setCustomer] = useState("");
+  const [product, setProduct] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [status, setStatus] = useState<"pending" | "in-progress" | "completed">("pending");
+  const [dueDate, setDueDate] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -46,6 +62,51 @@ const Production = () => {
 
     return () => unsubscribe();
   }, [user]);
+
+  const handleCreateOrder = async () => {
+    if (!orderId || !customer || !product || !quantity || !dueDate) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    const { id, error } = await productionService.createOrder({
+      userId: user!.uid,
+      orderId,
+      customer,
+      product,
+      quantity: parseInt(quantity),
+      status,
+      dueDate: new Date(dueDate),
+    });
+
+    setSaving(false);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Order created successfully!",
+      });
+      setDialogOpen(false);
+      // Reset form
+      setOrderId("");
+      setCustomer("");
+      setProduct("");
+      setQuantity("");
+      setStatus("pending");
+      setDueDate("");
+    }
+  };
 
   const capacityData = machines.map(m => ({
     machine: m.machineName,
@@ -81,9 +142,92 @@ const Production = () => {
         <h1 className="font-display text-2xl font-bold text-foreground">Production Planning</h1>
         <p className="text-sm text-muted-foreground">Manage schedules, capacity, and orders</p>
       </div>
-      <Button className="gradient-primary text-primary-foreground border-0 gap-2">
-        <Plus className="h-4 w-4" /> New Order
-      </Button>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogTrigger asChild>
+          <Button className="gradient-primary text-primary-foreground border-0 gap-2">
+            <Plus className="h-4 w-4" /> New Order
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Production Order</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="orderId">Order ID *</Label>
+              <Input
+                id="orderId"
+                placeholder="e.g., ORD-2026-001"
+                value={orderId}
+                onChange={(e) => setOrderId(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="customer">Customer Name *</Label>
+              <Input
+                id="customer"
+                placeholder="e.g., ABC Industries"
+                value={customer}
+                onChange={(e) => setCustomer(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="product">Product *</Label>
+              <Input
+                id="product"
+                placeholder="e.g., Steel Components"
+                value={product}
+                onChange={(e) => setProduct(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Quantity *</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                placeholder="e.g., 500"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dueDate">Due Date *</Label>
+              <Input
+                id="dueDate"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              className="gradient-primary text-primary-foreground border-0"
+              onClick={handleCreateOrder}
+              disabled={saving}
+            >
+              {saving ? "Creating..." : "Create Order"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
 
     {/* Quick Stats */}
