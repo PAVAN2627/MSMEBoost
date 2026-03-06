@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-illustration.jpg";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="relative overflow-hidden pt-16">
       <div className="absolute inset-0 gradient-hero opacity-[0.03]" />
@@ -28,14 +30,18 @@ const HeroSection = () => {
             <p className="mt-6 max-w-lg text-lg text-muted-foreground leading-relaxed">
               Whether you're manufacturing products or delivering services — plan operations, track performance, discover innovations, and get AI recommendations in one intelligent platform built for Indian MSMEs.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link to="/dashboard">
-                <Button size="lg" className="gradient-primary text-primary-foreground border-0 gap-2 shadow-card-lg">
-                  Start Free <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Button size="lg" variant="outline" className="gap-2">
-                <Play className="h-4 w-4" /> Watch Demo
+            <div className="mt-8 flex flex-wrap gap-4 relative z-10">
+              <Button 
+                type="button"
+                size="lg" 
+                className="gradient-primary text-primary-foreground border-0 gap-2 shadow-card-lg cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  console.log('Button clicked!');
+                  navigate('/register');
+                }}
+              >
+                Start Free <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
             <div className="mt-10 flex items-center gap-8 text-sm text-muted-foreground">

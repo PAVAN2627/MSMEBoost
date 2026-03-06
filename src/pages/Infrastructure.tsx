@@ -1,11 +1,17 @@
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { motion } from "framer-motion";
-import { Building2, Wrench, Zap, Truck, AlertTriangle, CheckCircle2, ArrowUpCircle } from "lucide-react";
+import { Building2, Wrench, Zap, Truck, AlertTriangle, CheckCircle2, ArrowUpCircle, Plus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadialBarChart, RadialBar, ResponsiveContainer } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { infrastructureService } from "@/services/infrastructureService";
+import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 
 const statusBadge = (s: string) => {
@@ -16,9 +22,19 @@ const statusBadge = (s: string) => {
 
 const Infrastructure = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [equipment, setEquipment] = useState<any[]>([]);
-  const [score, setScore] = useState<any>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editingEquipment, setEditingEquipment] = useState<any>(null);
+
+  // Form state
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
+  const [condition, setCondition] = useState<"Excellent" | "Good" | "Fair" | "Poor">("Good");
+  const [efficiency, setEfficiency] = useState("");
+  const [status, setStatus] = useState<"operational" | "needs-maintenance" | "upgrade-needed">("operational");
 
   useEffect(() => {
     if (!user) return;
@@ -26,22 +42,146 @@ const Infrastructure = () => {
     const fetchData = async () => {
       const { equipment: equipmentData } = await infrastructureService.getEquipment(user.uid);
       if (equipmentData) setEquipment(equipmentData);
-
-      const { score: scoreData } = await infrastructureService.getLatestScore(user.uid);
-      if (scoreData) setScore(scoreData);
-
       setLoading(false);
     };
 
     fetchData();
   }, [user]);
 
-  const infraScore = score ? [{ name: "Score", value: score.overallScore, fill: "hsl(38, 92%, 55%)" }] : [{ name: "Score", value: 0, fill: "hsl(220, 14%, 92%)" }];
+  const resetForm = () => {
+    setEditingEquipment(null);
+    setName("");
+    setAge("");
+    setCondition("Good");
+    setEfficiency("");
+    setStatus("operational");
+  };
 
+  const openEditDialog = (equip: any) => {
+    setEditingEquipment(equip);
+    setName(equip.name);
+    setAge(equip.age);
+    setCondition(equip.condition);
+    setEfficiency(equip.efficiency.toString());
+    setStatus(equip.status);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async (equipmentId: string) => {
+    if (!confirm("Are you sure you want to delete this equipment?")) return;
+    
+    const { error } = await infrastructureService.deleteEquipment(equipmentId);
+    if (error) {
+      toast({
+        title: "Error",
+        description: error,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Equipment deleted successfully!",
+      });
+      // Refresh data
+      const { equipment: updatedEquipment } = await infrastructureService.getEquipment(user!.uid);
+      if (updatedEquipment) setEquipment(updatedEquipment);
+    }
+  };
+
+  const handleSaveEquipment = async () => {
+    if (!name || !age || !efficiency) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+
+    if (editingEquipment) {
+      // Update existing equipment
+      const { error } = await infrastructureService.updateEquipment(editingEquipment.id, {
+        name,
+        age,
+        condition,
+        efficiency: parseInt(efficiency),
+        status
+      });
+
+      setSaving(false);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Equipment updated successfully!",
+        });
+        setDialogOpen(false);
+        resetForm();
+        // Refresh data
+        const { equipment: updatedEquipment } = await infrastructureService.getEquipment(user!.uid);
+        if (updatedEquipment) setEquipment(updatedEquipment);
+      }
+    } else {
+      // Add new equipment
+      const { error } = await infrastructureService.addEquipment({
+        userId: user!.uid,
+        name,
+        age,
+        condition,
+        efficiency: parseInt(efficiency),
+        status
+      });
+
+      setSaving(false);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Equipment added successfully!",
+        });
+        setDialogOpen(false);
+        resetForm();
+        // Refresh data
+        const { equipment: updatedEquipment } = await infrastructureService.getEquipment(user!.uid);
+        if (updatedEquipment) setEquipment(updatedEquipment);
+      }
+    }
+  };
+
+  // Calculate score dynamically from equipment data
   const operationalCount = equipment.filter(e => e.status === 'operational').length;
   const avgEfficiency = equipment.length > 0 
     ? Math.round(equipment.reduce((sum, e) => sum + e.efficiency, 0) / equipment.length)
     : 0;
+
+  // Calculate condition score
+  const conditionScore = equipment.length > 0
+    ? Math.round(equipment.reduce((sum, e) => {
+        const conditionValue = { 'Excellent': 100, 'Good': 75, 'Fair': 50, 'Poor': 25 };
+        return sum + (conditionValue[e.condition] || 50);
+      }, 0) / equipment.length)
+    : 0;
+
+  // Calculate overall infrastructure score
+  const calculatedScore = equipment.length > 0
+    ? Math.round((avgEfficiency * 0.4) + (conditionScore * 0.3) + ((operationalCount / equipment.length) * 100 * 0.3))
+    : 0;
+
+  const infraScore = [{ name: "Score", value: calculatedScore, fill: "hsl(38, 92%, 55%)" }];
 
   if (loading) {
     return (
@@ -53,29 +193,216 @@ const Infrastructure = () => {
     );
   }
 
-  const hasData = equipment.length > 0 || score;
+  const hasData = equipment.length > 0;
 
   return (
     <DashboardLayout>
-    <div className="mb-6">
-      <h1 className="font-display text-2xl font-bold text-foreground">Infrastructure Assessment</h1>
-      <p className="text-sm text-muted-foreground">Evaluate and optimize your business infrastructure</p>
+    <div className="mb-6 flex items-center justify-between">
+      <div>
+        <h1 className="font-display text-2xl font-bold text-foreground">Infrastructure Assessment</h1>
+        <p className="text-sm text-muted-foreground">Evaluate and optimize your business infrastructure</p>
+      </div>
+      {hasData && (
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogTrigger asChild>
+            <Button className="gradient-primary text-primary-foreground border-0 gap-2">
+              <Plus className="h-4 w-4" /> Add Equipment
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingEquipment ? "Edit Equipment" : "Add Equipment"}</DialogTitle>
+              <DialogDescription>Track your machines, tools, and resources</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Equipment Name *</Label>
+                <Input
+                  id="name"
+                  placeholder="e.g., CNC Machine, Laptop, Delivery Van"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="age">Age *</Label>
+                <Input
+                  id="age"
+                  placeholder="e.g., New, 2 years, 5 years"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="condition">Condition *</Label>
+                <Select value={condition} onValueChange={(v) => setCondition(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Excellent">Excellent (100 pts)</SelectItem>
+                    <SelectItem value="Good">Good (75 pts)</SelectItem>
+                    <SelectItem value="Fair">Fair (50 pts)</SelectItem>
+                    <SelectItem value="Poor">Poor (25 pts)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="efficiency">Efficiency (%) *</Label>
+                <Input
+                  id="efficiency"
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="e.g., 85"
+                  value={efficiency}
+                  onChange={(e) => setEfficiency(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status *</Label>
+                <Select value={status} onValueChange={(v) => setStatus(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="operational">Operational</SelectItem>
+                    <SelectItem value="needs-maintenance">Needs Maintenance</SelectItem>
+                    <SelectItem value="upgrade-needed">Upgrade Needed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="rounded-lg bg-accent/50 p-3">
+                <p className="text-xs text-muted-foreground">
+                  Infrastructure Score = (Efficiency × 40%) + (Condition × 30%) + (Operational % × 30%)
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                className="gradient-primary text-primary-foreground border-0"
+                onClick={handleSaveEquipment}
+                disabled={saving}
+              >
+                {saving ? (editingEquipment ? "Updating..." : "Adding...") : (editingEquipment ? "Update Equipment" : "Add Equipment")}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
 
     {!hasData ? (
-      <div className="rounded-xl border border-border bg-card p-12 shadow-card text-center">
-        <h2 className="font-display text-2xl font-bold text-foreground mb-3">
-          No Infrastructure Data Yet
-        </h2>
-        <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-          Start tracking your equipment and infrastructure to get insights and recommendations for optimization.
-        </p>
-        <Link to="/dashboard">
-          <button className="gradient-primary text-primary-foreground px-6 py-2 rounded-lg border-0 font-medium">
-            Go to Dashboard
-          </button>
-        </Link>
-      </div>
+      <>
+        <div className="rounded-xl border border-border bg-card p-12 shadow-card text-center">
+          <h2 className="font-display text-2xl font-bold text-foreground mb-3">
+            No Infrastructure Data Yet
+          </h2>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            Start tracking your equipment and infrastructure to get insights and recommendations for optimization.
+          </p>
+          <Button 
+            className="gradient-primary text-primary-foreground border-0"
+            onClick={() => setDialogOpen(true)}
+          >
+            Add First Equipment
+          </Button>
+        </div>
+
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Equipment</DialogTitle>
+              <DialogDescription>Track your machines, tools, and resources</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Equipment Name *</Label>
+                <Input
+                  id="name"
+                  placeholder="e.g., CNC Machine, Laptop, Delivery Van"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="age">Age *</Label>
+                <Input
+                  id="age"
+                  placeholder="e.g., New, 2 years, 5 years"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="condition">Condition *</Label>
+                <Select value={condition} onValueChange={(v) => setCondition(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Excellent">Excellent (100 pts)</SelectItem>
+                    <SelectItem value="Good">Good (75 pts)</SelectItem>
+                    <SelectItem value="Fair">Fair (50 pts)</SelectItem>
+                    <SelectItem value="Poor">Poor (25 pts)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="efficiency">Efficiency (%) *</Label>
+                <Input
+                  id="efficiency"
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="e.g., 85"
+                  value={efficiency}
+                  onChange={(e) => setEfficiency(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status *</Label>
+                <Select value={status} onValueChange={(v) => setStatus(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="operational">Operational</SelectItem>
+                    <SelectItem value="needs-maintenance">Needs Maintenance</SelectItem>
+                    <SelectItem value="upgrade-needed">Upgrade Needed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="rounded-lg bg-accent/50 p-3">
+                <p className="text-xs text-muted-foreground">
+                  Infrastructure Score = (Efficiency × 40%) + (Condition × 30%) + (Operational % × 30%)
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                className="gradient-primary text-primary-foreground border-0"
+                onClick={handleSaveEquipment}
+                disabled={saving}
+              >
+                {saving ? "Adding..." : "Add Equipment"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
     ) : (
       <>
         {/* Score + Summary Cards */}
@@ -89,7 +416,7 @@ const Infrastructure = () => {
                 </RadialBarChart>
               </ResponsiveContainer>
             </div>
-            <p className="font-display text-3xl font-bold text-foreground -mt-2">{score?.overallScore || 0}<span className="text-lg text-muted-foreground">/100</span></p>
+            <p className="font-display text-3xl font-bold text-foreground -mt-2">{calculatedScore}<span className="text-lg text-muted-foreground">/100</span></p>
           </div>
           {[
             { icon: Wrench, label: "Equipment Health", value: `${avgEfficiency}%`, color: "text-info" },
@@ -123,12 +450,13 @@ const Infrastructure = () => {
               <th className="p-4 font-medium">Condition</th>
               <th className="p-4 font-medium">Efficiency</th>
               <th className="p-4 font-medium">Status</th>
+              <th className="p-4 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
             {equipment.length === 0 ? (
               <tr className="border-b border-border last:border-0">
-                <td colSpan={5} className="p-4 text-center text-muted-foreground">
+                <td colSpan={6} className="p-4 text-center text-muted-foreground">
                   No equipment added yet
                 </td>
               </tr>
@@ -147,6 +475,24 @@ const Infrastructure = () => {
                     </div>
                   </td>
                   <td className="p-4">{statusBadge(e.status)}</td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => openEditDialog(e)}
+                        className="p-1 hover:bg-accent rounded"
+                        title="Edit"
+                      >
+                        <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(e.id)}
+                        className="p-1 hover:bg-destructive/10 rounded"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}

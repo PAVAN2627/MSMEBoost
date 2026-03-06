@@ -1,118 +1,190 @@
-# 🏭 Udyog AI - MSME Modernization Platform
+# MSMEBoost 🚀
 
-A comprehensive digital platform designed to support Micro, Small, and Medium Enterprises (MSMEs) in India with tools for production planning, performance analytics, infrastructure assessment, and AI-powered business advisory.
+**AI-Powered Business Management Platform for Indian MSMEs**
 
-## 🌟 Features
+MSMEBoost is a comprehensive, real-time business management platform designed specifically for Micro, Small, and Medium Enterprises (MSMEs) in India. Built with React, TypeScript, Firebase, and Google Gemini AI, it provides intelligent insights and automation to help MSMEs grow efficiently.
 
-### 📊 Production Management
-- Real-time production order tracking
-- Machine monitoring and efficiency metrics
-- Status management (Pending, In Progress, Completed)
-- Due date tracking and alerts
+---
 
-### 📈 Performance Analytics
-- Daily, weekly, and monthly production insights
-- Machine utilization tracking
-- Revenue vs operational cost analysis
-- KPI dashboards with trend visualization
+## 🌟 Key Features
 
-### 🏗️ Infrastructure Assessment
-- Equipment inventory management
-- Health and efficiency monitoring
-- Maintenance scheduling
-- Infrastructure scoring system
+### 1. **Operations Management**
+- Track production orders and service projects
+- Real-time order status monitoring (Pending, In Progress, Completed)
+- Capacity planning and resource allocation
+- Auto-generate analytics from order data
+- Edit and delete functionality with full CRUD operations
 
-### 💡 Innovation Tracker
-- R&D project management
-- Technology adoption tracking
-- Progress monitoring with milestones
-- Innovation score calculation
+### 2. **Performance Analytics**
+- Real-time dashboards with interactive charts
+- Financial metrics (Revenue, Costs, Profit Margins)
+- Production efficiency tracking
+- Machine utilization monitoring
+- Trend analysis and forecasting
 
-### 🤖 AI Business Advisor
+### 3. **AI Business Advisor** 🤖
 - Powered by Google Gemini AI
-- Real-time business consultation
-- Personalized recommendations
-- 24/7 availability
+- Personalized business advice based on your actual data
+- Context-aware recommendations
+- Chat history saved to Firebase
+- Understands your complete business profile:
+  - Business type, industry, location
+  - Orders, revenue, costs
+  - Equipment efficiency
+  - Innovation projects
+  - Sustainability metrics
 
-### 🏛️ Government Schemes Finder
+### 4. **Infrastructure Assessment**
+- Dynamic equipment tracking
+- Real-time infrastructure score calculation
+- Equipment health monitoring
+- Maintenance alerts
+- Condition-based recommendations
+- Edit/delete equipment records
+
+### 5. **Innovation Tracker**
+- R&D project management
+- Progress tracking with visual indicators
+- Technology adoption monitoring
+- Innovation score calculation
+- Project categorization
+
+### 6. **Sustainability & Resources**
+- Energy consumption tracking (kWh)
+- Water usage monitoring (Liters)
+- Waste management (Generated vs Recycled)
+- Carbon footprint calculation (auto-computed)
+- Renewable energy percentage tracking
+- Comprehensive data table with edit/delete
+- Eco-friendly recommendations
+
+### 7. **Government Schemes Finder**
 - AI-powered scheme discovery
-- Personalized recommendations based on:
-  - Business type
-  - Industry sector
-  - Location
-- Detailed eligibility and application information
+- Filtered by business type, industry, and location
+- Detailed scheme information:
+  - Eligibility criteria
+  - Financial benefits
+  - Application process
+  - Official website links
+- Save and view search history
+- 100+ government schemes database
 
-### 🌱 Sustainability & Reports
-- Environmental impact tracking
-- Compliance monitoring
-- Custom report generation
+### 8. **Reports & Notifications**
+- Comprehensive business reports
+- Download reports as text files
+- Smart notifications based on real data:
+  - Overdue orders
+  - Equipment maintenance needs
+  - Low efficiency alerts
+  - Financial performance insights
+  - Sustainability recommendations
 
-## 🚀 Tech Stack
+### 9. **Settings & Profile Management**
+- User profile management
+- Business information configuration
+- Notification preferences
+- Appearance settings
+- Account security
 
-- **Frontend**: React 18 + TypeScript
-- **Styling**: Tailwind CSS + shadcn/ui components
-- **Routing**: React Router v6
-- **Animations**: Framer Motion
-- **Charts**: Recharts
-- **Backend**: Firebase (Authentication + Firestore)
-- **AI**: Google Gemini API
-- **Build Tool**: Vite
-- **Testing**: Vitest
+---
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **TailwindCSS** - Styling
+- **shadcn/ui** - UI components
+- **Recharts** - Data visualization
+- **Framer Motion** - Animations
+- **React Router** - Navigation
+
+### Backend & Services
+- **Firebase Authentication** - User management
+- **Cloud Firestore** - Real-time database
+- **Google Gemini AI** - AI-powered advisor
+- **Firebase Security Rules** - Data protection
+
+### Development Tools
+- **ESLint** - Code linting
+- **Vitest** - Unit testing
+- **PostCSS** - CSS processing
+
+---
 
 ## 📋 Prerequisites
 
-- Node.js 18+ and npm
-- Firebase account
-- Google AI API key
+Before you begin, ensure you have:
 
-## 🛠️ Installation
+- **Node.js** (v18 or higher)
+- **npm** or **yarn**
+- **Firebase Account** (free tier works)
+- **Google AI API Key** (for Gemini AI)
 
-1. **Clone the repository**
+---
+
+## 🚀 Installation & Setup
+
+### 1. Clone the Repository
 ```bash
 git clone <repository-url>
-cd udyog-ai-assistant
+cd msmeboost
 ```
 
-2. **Install dependencies**
+### 2. Install Dependencies
 ```bash
 npm install
 ```
 
-3. **Set up environment variables**
+### 3. Firebase Setup
 
-Copy `.env.example` to `.env`:
-```bash
-cp .env.example .env
-```
+#### Create Firebase Project
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project (or use existing)
+3. Enable **Authentication** → Email/Password
+4. Enable **Firestore Database**
 
-Edit `.env` and add your credentials:
+#### Get Firebase Configuration
+1. Go to Project Settings → General
+2. Scroll to "Your apps" → Web app
+3. Copy the Firebase configuration
+
+#### Configure Environment Variables
+Create a `.env` file in the root directory:
+
 ```env
 # Firebase Configuration
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+VITE_FIREBASE_API_KEY=your_api_key_here
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project_id.firebasestorage.app
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
-VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
-# Google Gemini AI Configuration
-VITE_GOOGLE_AI_API_KEY=your_google_ai_api_key
+# Google AI Configuration
+VITE_GOOGLE_AI_API_KEY=your_gemini_api_key_here
 ```
 
-4. **Configure Firebase**
+### 4. Set Up Firestore Security Rules
 
-- Go to [Firebase Console](https://console.firebase.google.com)
-- Create a new project or select existing
-- Enable **Authentication** (Email/Password provider)
-- Enable **Firestore Database**
-- Copy your config values to `.env`
+1. Go to Firebase Console → Firestore Database → Rules
+2. Copy the content from `firestore.rules` file
+3. Paste into Firebase Console
+4. Click **Publish**
 
-5. **Get Google AI API Key**
+The rules ensure:
+- Users can only access their own data
+- All operations require authentication
+- Proper security for all 10 collections
 
-- Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
-- Create a new API key
-- Add it to `.env` as `VITE_GOOGLE_AI_API_KEY`
+### 5. Get Google Gemini API Key
+
+1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Create a new API key
+3. Add it to your `.env` file
+
+---
 
 ## 🏃 Running the Application
 
@@ -120,7 +192,7 @@ VITE_GOOGLE_AI_API_KEY=your_google_ai_api_key
 ```bash
 npm run dev
 ```
-Access the app at `http://localhost:5173`
+Access at: `http://localhost:5173`
 
 ### Build for Production
 ```bash
@@ -137,191 +209,173 @@ npm run preview
 npm run test
 ```
 
-## 📁 Project Structure
+---
 
-```
-udyog-ai-assistant/
-├── src/
-│   ├── components/          # Reusable UI components
-│   │   ├── dashboard/       # Dashboard-specific components
-│   │   ├── landing/         # Landing page sections
-│   │   └── ui/              # shadcn/ui components
-│   ├── pages/               # Page components
-│   │   ├── Dashboard.tsx    # Main dashboard
-│   │   ├── Production.tsx   # Production management
-│   │   ├── Analytics.tsx    # Performance analytics
-│   │   ├── Infrastructure.tsx
-│   │   ├── Innovation.tsx
-│   │   ├── AIAdvisor.tsx    # AI chat interface
-│   │   ├── Schemes.tsx      # Government schemes
-│   │   └── ...
-│   ├── services/            # API and business logic
-│   │   ├── productionService.ts
-│   │   ├── analyticsService.ts
-│   │   ├── innovationService.ts
-│   │   ├── infrastructureService.ts
-│   │   └── googleAIService.ts
-│   ├── hooks/               # Custom React hooks
-│   │   └── useAuth.ts       # Authentication hook
-│   ├── lib/                 # Utilities and configs
-│   │   ├── firebase.ts      # Firebase initialization
-│   │   └── utils.ts         # Helper functions
-│   ├── App.tsx              # Main app component
-│   └── main.tsx             # Entry point
-├── public/                  # Static assets
-├── .env                     # Environment variables (not in git)
-├── .env.example             # Environment template
-├── package.json
-├── vite.config.ts
-└── README.md
-```
+## 📊 Database Collections
 
-## 🔐 Authentication
+MSMEBoost uses 10 Firestore collections:
 
-The platform uses Firebase Authentication with email/password:
+| Collection | Purpose |
+|------------|---------|
+| `production_orders` | Production/service orders |
+| `analytics` | Performance metrics |
+| `machines` | Machine/resource data |
+| `equipment` | Infrastructure equipment |
+| `infrastructure_scores` | Infrastructure assessments |
+| `innovation_projects` | R&D projects |
+| `sustainability` | Environmental data |
+| `users` | User profiles |
+| `chat_history` | AI advisor conversations |
+| `government_schemes` | Saved scheme searches |
 
-1. **Register**: Create a new account with business details
-2. **Login**: Access your dashboard
-3. **Protected Routes**: All dashboard pages require authentication
+---
 
-## 💾 Database Structure
+## 🔐 Security Features
 
-### Firestore Collections
+- **Firebase Authentication** - Secure user login
+- **Row-level Security** - Users can only access their own data
+- **Environment Variables** - Sensitive keys protected
+- **Firestore Rules** - Server-side validation
+- **HTTPS Only** - Secure data transmission
 
-**production_orders**
-```javascript
-{
-  userId: string,
-  orderId: string,
-  customer: string,
-  product: string,
-  quantity: number,
-  status: 'pending' | 'in-progress' | 'completed',
-  dueDate: Timestamp,
-  createdAt: Timestamp
-}
-```
+---
 
-**analytics**
-```javascript
-{
-  userId: string,
-  date: Timestamp,
-  revenue: number,
-  production: number,
-  efficiency: number,
-  costs: number,
-  type: 'daily' | 'weekly' | 'monthly'
-}
-```
+## 🎯 User Workflow
 
-**machines**
-```javascript
-{
-  userId: string,
-  machineName: string,
-  efficiency: number,
-  capacity: number,
-  used: number,
-  status: 'operational' | 'maintenance' | 'offline',
-  lastUpdated: Timestamp
-}
-```
+### 1. Registration & Login
+- Sign up with email and password
+- Provide business details (type, industry, size, location)
+- Profile saved to Firestore
 
-**innovation_projects**
-```javascript
-{
-  userId: string,
-  name: string,
-  status: 'Planning' | 'In Progress' | 'R&D' | 'Completed',
-  category: string,
-  progress: number,
-  startDate: Timestamp,
-  targetDate: Timestamp,
-  createdAt: Timestamp
-}
-```
+### 2. Dashboard Overview
+- View key metrics and KPIs
+- Quick access to all modules
+- Real-time data updates
 
-**equipment**
-```javascript
-{
-  userId: string,
-  name: string,
-  age: string,
-  condition: string,
-  efficiency: number,
-  status: 'operational' | 'needs-maintenance' | 'upgrade-needed'
-}
-```
+### 3. Operations Management
+- Add production orders or service projects
+- Track status and deadlines
+- Auto-generate analytics data
+- Edit/delete orders as needed
 
-## 🎨 Customization
+### 4. Analytics & Insights
+- View financial performance
+- Monitor production efficiency
+- Analyze trends with charts
+- Download reports
 
-### Theme Colors
-Edit `tailwind.config.ts` to customize the color scheme:
-```typescript
-colors: {
-  primary: "...",
-  secondary: "...",
-  // ... more colors
-}
-```
+### 5. AI Advisor Consultation
+- Ask business questions
+- Get personalized recommendations
+- Save important conversations
+- Review chat history
 
-### Components
-All UI components are in `src/components/ui/` and can be customized using Tailwind classes.
+### 6. Infrastructure Management
+- Add equipment and resources
+- Track efficiency and condition
+- Get maintenance alerts
+- View dynamic infrastructure score
 
-## 🐛 Troubleshooting
+### 7. Innovation Tracking
+- Create R&D projects
+- Monitor progress
+- Track technology adoption
+- Measure innovation score
 
-### Firebase Errors
-- **"Missing or insufficient permissions"**: Enable Firestore and set up security rules
-- **"Auth domain not authorized"**: Add your domain to Firebase authorized domains
+### 8. Sustainability Monitoring
+- Log resource usage
+- Track carbon footprint
+- Monitor recycling rates
+- Get eco-friendly tips
+- Edit/delete records
 
-### API Key Issues
-- **"API key not valid"**: Check if the key is correctly set in `.env`
-- **"Quota exceeded"**: Check your Google AI API usage limits
+### 9. Government Schemes
+- Search for relevant schemes
+- Filter by business criteria
+- Save useful searches
+- Access scheme history
 
-### Build Issues
-- Clear cache: `rm -rf node_modules package-lock.json && npm install`
-- Check Node version: `node --version` (should be 18+)
+---
 
-### Browser Cache
-If you see old data after updates:
-- Hard refresh: `Ctrl+Shift+R` (Windows) or `Cmd+Shift+R` (Mac)
-- Clear browser cache completely
+## 🌐 Supported Business Types
 
-## 📝 Available Scripts
+- **Manufacturing** - Production-based businesses
+- **Service-based** - Service providers
+- **Hybrid** - Manufacturing + Services
+- **Trading** - Buy and sell businesses
+- **Retail** - Retail stores
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run test` - Run tests
-- `npm run lint` - Lint code
+---
+
+## 📱 Responsive Design
+
+MSMEBoost is fully responsive and works on:
+- Desktop computers
+- Tablets
+- Mobile phones
+
+---
 
 ## 🤝 Contributing
 
+Contributions are welcome! Please follow these steps:
+
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
+
+---
 
 ## 📄 License
 
 This project is licensed under the MIT License.
 
-## 🙏 Acknowledgments
+---
 
-- Built for PS10 - Integrated Digital Platform for MSME Modernization
-- Powered by Google Gemini AI
-- UI components from [shadcn/ui](https://ui.shadcn.com)
-- Icons from [Lucide](https://lucide.dev)
-
-## 📞 Support
+## 🆘 Support
 
 For issues and questions:
-- Create an issue in the repository
+- Create an issue on GitHub
 - Check existing documentation
-- Review troubleshooting guide
+- Review Firebase setup guide
 
 ---
 
-**Made with ❤️ for Indian MSMEs**
+## 🎉 Acknowledgments
+
+- **Firebase** - Backend infrastructure
+- **Google Gemini AI** - AI capabilities
+- **shadcn/ui** - UI components
+- **Recharts** - Data visualization
+- **Indian MSME Community** - Inspiration and feedback
+
+---
+
+## 📈 Future Enhancements
+
+- [ ] Multi-language support (Hindi, Tamil, etc.)
+- [ ] Mobile app (React Native)
+- [ ] Advanced analytics with ML predictions
+- [ ] Integration with accounting software
+- [ ] Inventory management module
+- [ ] Employee management
+- [ ] Customer relationship management (CRM)
+- [ ] Invoice generation
+- [ ] Payment gateway integration
+
+---
+
+## 🔗 Important Links
+
+- [Firebase Console](https://console.firebase.google.com/)
+- [Google AI Studio](https://makersuite.google.com/)
+- [Ministry of MSME](https://msme.gov.in/)
+- [Udyam Registration](https://udyamregistration.gov.in/)
+
+---
+
+**Built with ❤️ for Indian MSMEs**
+
+*Empowering small businesses with AI-powered insights and automation*

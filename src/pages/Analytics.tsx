@@ -62,7 +62,7 @@ const Analytics = () => {
 
   const kpis = [
     { label: "Avg Production", value: analyticsData.length > 0 ? `${(analyticsData.reduce((sum, d) => sum + (d.production || 0), 0) / analyticsData.length).toFixed(1)} units/day` : "0 units/day", change: "0%", up: true },
-    { label: "Total Revenue", value: `₹${(totalRevenue / 100000).toFixed(1)}L`, change: "0%", up: true },
+    { label: "Total Revenue", value: totalRevenue > 100000 ? `₹${(totalRevenue / 100000).toFixed(1)}L` : `₹${totalRevenue.toLocaleString()}`, change: "0%", up: true },
     { label: "Profit Margin", value: `${profitMargin}%`, change: "0%", up: true },
     { label: "Production Efficiency", value: `${avgEfficiency}%`, change: "0%", up: true },
   ];

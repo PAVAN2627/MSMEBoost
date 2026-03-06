@@ -1,10 +1,14 @@
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { Globe, Search, Sparkles, Building2, MapPin, Briefcase } from "lucide-react";
-import { useState } from "react";
+import { Globe, Search, Sparkles, Building2, MapPin, Briefcase, History, FileText, Save } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { googleAIService } from "@/services/googleAIService";
+import { schemesService, SchemeSearch } from "@/services/schemesService";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 const businessTypes = [
   "Manufacturing",
@@ -77,12 +81,65 @@ const states = [
 ];
 
 const Schemes = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [businessType, setBusinessType] = useState("");
   const [industry, setIndustry] = useState("");
   const [location, setLocation] = useState("");
   const [schemes, setSchemes] = useState("");
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<SchemeSearch[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  // Load search history
+  useEffect(() => {
+    if (!user) return;
+
+    const loadHistory = async () => {
+      const { searches } = await schemesService.getSearches(user.uid, 20);
+      if (searches) setSearchHistory(searches);
+      setLoadingHistory(false);
+    };
+
+    loadHistory();
+  }, [user]);
+
+  const saveSearch = async () => {
+    if (!user || !schemes || !businessType || !industry || !location) return;
+
+    const search: Omit<SchemeSearch, 'id'> = {
+      userId: user.uid,
+      businessType,
+      industry,
+      location,
+      schemes,
+      createdAt: new Date()
+    };
+
+    const { error } = await schemesService.saveSearch(search);
+    
+    if (!error) {
+      // Reload history
+      const { searches } = await schemesService.getSearches(user.uid, 20);
+      if (searches) setSearchHistory(searches);
+      
+      toast({
+        title: "Search Saved",
+        description: "Your schemes search has been saved to history.",
+      });
+    }
+  };
+
+  const loadHistoryItem = (item: SchemeSearch) => {
+    setBusinessType(item.businessType);
+    setIndustry(item.industry);
+    setLocation(item.location);
+    setSchemes(item.schemes);
+    setSearched(true);
+    setShowHistory(false);
+  };
 
   const searchSchemes = async () => {
     if (!businessType || !industry || !location) {
@@ -104,15 +161,42 @@ const Schemes = () => {
 
   return (
     <DashboardLayout>
-      <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-          <Globe className="h-6 w-6 text-primary" /> Government Schemes
-        </h1>
-        <p className="text-sm text-muted-foreground">Discover funding and support programs for your MSME</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+            <Globe className="h-6 w-6 text-primary" /> Government Schemes
+          </h1>
+          <p className="text-sm text-muted-foreground">Discover funding and support programs for your MSME</p>
+        </div>
+        {searched && schemes && (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className="gap-2"
+            >
+              <History className="h-4 w-4" />
+              {showHistory ? 'Hide' : 'Show'} History
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={saveSearch}
+              className="gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save Search
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Search Form */}
-      <div className="mb-6 rounded-xl border border-border bg-card p-6 shadow-card">
+      <div className="flex gap-6">
+        {/* Main Content */}
+        <div className="flex-1">
+          {/* Search Form */}
+          <div className="mb-6 rounded-xl border border-border bg-card p-6 shadow-card">
         <h3 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-secondary" /> Find Relevant Schemes
         </h3>
@@ -320,6 +404,66 @@ const Schemes = () => {
           </div>
         </div>
       )}
+        </div>
+
+        {/* History Sidebar */}
+        {showHistory && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="w-80 flex flex-col"
+          >
+            <div className="mb-4">
+              <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+                <History className="h-5 w-5 text-info" /> Search History
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">Your past scheme searches</p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto rounded-xl border border-border bg-card shadow-card">
+              {loadingHistory ? (
+                <div className="p-4 text-center text-muted-foreground">
+                  Loading history...
+                </div>
+              ) : searchHistory.length === 0 ? (
+                <div className="p-4 text-center text-muted-foreground">
+                  No saved searches yet
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {searchHistory.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => loadHistoryItem(item)}
+                      className="w-full p-4 text-left hover:bg-accent transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <FileText className="h-4 w-4 text-info mt-1 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-foreground">
+                            {item.businessType}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {item.industry} • {item.location}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(item.createdAt).toLocaleDateString('en-IN', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </div>
     </DashboardLayout>
   );
 };

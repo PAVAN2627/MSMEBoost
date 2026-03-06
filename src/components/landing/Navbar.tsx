@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Zap } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   const links = [
     { label: "Features", href: "#features" },
     { label: "Analytics", href: "#analytics" },
     { label: "AI Advisor", href: "#ai" },
-    { label: "Pricing", href: "#pricing" },
   ];
 
   return (
@@ -42,11 +42,13 @@ const Navbar = () => {
           <Link to="/login">
             <Button variant="ghost" size="sm">Log in</Button>
           </Link>
-          <Link to="/register">
-            <Button size="sm" className="gradient-primary text-primary-foreground border-0">
-              Get Started Free
-            </Button>
-          </Link>
+          <Button 
+            size="sm" 
+            className="gradient-primary text-primary-foreground border-0"
+            onClick={() => navigate('/register')}
+          >
+            Get Started Free
+          </Button>
         </div>
 
         <button className="md:hidden" onClick={() => setOpen(!open)}>
@@ -68,9 +70,15 @@ const Navbar = () => {
                   {l.label}
                 </a>
               ))}
-              <Link to="/dashboard">
-                <Button className="w-full gradient-primary text-primary-foreground border-0">Get Started</Button>
-              </Link>
+              <Button 
+                className="w-full gradient-primary text-primary-foreground border-0"
+                onClick={() => {
+                  setOpen(false);
+                  navigate('/register');
+                }}
+              >
+                Get Started
+              </Button>
             </div>
           </motion.div>
         )}

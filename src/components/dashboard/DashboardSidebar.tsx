@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-  { icon: Factory, label: "Production", href: "/dashboard/production" },
+  { icon: Factory, label: "Operations", href: "/dashboard/production" },
   { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
   { icon: Building2, label: "Infrastructure", href: "/dashboard/infrastructure" },
   { icon: Lightbulb, label: "Innovation", href: "/dashboard/innovation" },
@@ -83,10 +83,13 @@ const DashboardSidebar = () => {
       </nav>
 
       <div className="space-y-1 border-t border-sidebar-border px-2 py-4">
-        <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/50">
+        <Link
+          to="/dashboard/settings"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/50"
+        >
           <Settings className="h-5 w-5 shrink-0" />
           {!collapsed && <span>Settings</span>}
-        </button>
+        </Link>
         <Link
           to="/"
           className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/50"

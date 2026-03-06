@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const plans = [
   {
@@ -55,7 +55,10 @@ const plans = [
   }
 ];
 
-const PricingSection = () => (
+const PricingSection = () => {
+  const navigate = useNavigate();
+
+  return (
   <section id="pricing" className="py-20 lg:py-28 bg-accent/30">
     <div className="container mx-auto px-4">
       <motion.div
@@ -118,18 +121,17 @@ const PricingSection = () => (
               ))}
             </ul>
 
-            <Link to="/register">
-              <Button 
-                className={`w-full ${
-                  plan.popular 
-                    ? "gradient-primary text-primary-foreground border-0" 
-                    : "border-border"
-                }`}
-                variant={plan.popular ? "default" : "outline"}
-              >
-                {plan.cta}
-              </Button>
-            </Link>
+            <Button 
+              className={`w-full ${
+                plan.popular 
+                  ? "gradient-primary text-primary-foreground border-0" 
+                  : "border-border"
+              }`}
+              variant={plan.popular ? "default" : "outline"}
+              onClick={() => navigate('/register')}
+            >
+              {plan.cta}
+            </Button>
           </motion.div>
         ))}
       </div>

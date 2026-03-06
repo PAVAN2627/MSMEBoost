@@ -1,9 +1,9 @@
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { motion } from "framer-motion";
-import { Calendar, Plus, AlertTriangle, CheckCircle2, Clock, Package, Wrench, Users } from "lucide-react";
+import { Calendar, Plus, Package, Wrench, Clock, BarChart3, Building2, Brain, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,13 +15,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { productionService, ProductionOrder } from "@/services/productionService";
 import { analyticsService, MachineData } from "@/services/analyticsService";
+import { infrastructureService } from "@/services/infrastructureService";
 import { useToast } from "@/hooks/use-toast";
-
-const bottlenecks = [
-  { area: "CNC Lathe Station", issue: "Queue buildup — 4 jobs waiting", severity: "high" },
-  { area: "Quality Check", issue: "Manual inspection causing 2hr delay", severity: "medium" },
-  { area: "Raw Material Store", issue: "Low stock on Grade-8 Steel", severity: "high" },
-];
+import { Link } from "react-router-dom";
 
 const statusBadge = (s: string) => {
   if (s === "completed") return <Badge className="bg-success/10 text-success border-success/20">Completed</Badge>;
@@ -37,6 +33,7 @@ const Production = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<ProductionOrder | null>(null);
 
   // Form state
   const [orderId, setOrderId] = useState("");
@@ -45,6 +42,8 @@ const Production = () => {
   const [quantity, setQuantity] = useState("");
   const [status, setStatus] = useState<"pending" | "in-progress" | "completed">("pending");
   const [dueDate, setDueDate] = useState("");
+  const [unitPrice, setUnitPrice] = useState("");
+  const [unitCost, setUnitCost] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -63,6 +62,47 @@ const Production = () => {
     return () => unsubscribe();
   }, [user]);
 
+  const openEditDialog = (order: ProductionOrder) => {
+    setEditingOrder(order);
+    setOrderId(order.orderId);
+    setCustomer(order.customer);
+    setProduct(order.product);
+    setQuantity(order.quantity.toString());
+    setStatus(order.status);
+    setDueDate(new Date(order.dueDate).toISOString().split('T')[0]);
+    setDialogOpen(true);
+  };
+
+  const resetForm = () => {
+    setEditingOrder(null);
+    setOrderId("");
+    setCustomer("");
+    setProduct("");
+    setQuantity("");
+    setStatus("pending");
+    setDueDate("");
+    setUnitPrice("");
+    setUnitCost("");
+  };
+
+  const handleDelete = async (orderId: string) => {
+    if (!confirm("Are you sure you want to delete this order?")) return;
+    
+    const { error } = await productionService.deleteOrder(orderId);
+    if (error) {
+      toast({
+        title: "Error",
+        description: error,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Order deleted successfully!",
+      });
+    }
+  };
+
   const handleCreateOrder = async () => {
     if (!orderId || !customer || !product || !quantity || !dueDate) {
       toast({
@@ -74,37 +114,122 @@ const Production = () => {
     }
 
     setSaving(true);
-    const { id, error } = await productionService.createOrder({
-      userId: user!.uid,
-      orderId,
-      customer,
-      product,
-      quantity: parseInt(quantity),
-      status,
-      dueDate: new Date(dueDate),
-    });
-
-    setSaving(false);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: error,
-        variant: "destructive",
+    
+    if (editingOrder) {
+      // Update existing order
+      const { error } = await productionService.updateOrder(editingOrder.id!, {
+        orderId,
+        customer,
+        product,
+        quantity: parseInt(quantity),
+        status,
+        dueDate: new Date(dueDate),
       });
+
+      // Also create/update analytics data if financial info provided
+      if (!error && (unitPrice || unitCost)) {
+        const qty = parseInt(quantity);
+        const calculatedRevenue = unitPrice ? parseFloat(unitPrice) * qty : 0;
+        const calculatedCost = unitCost ? parseFloat(unitCost) * qty : 0;
+        
+        await analyticsService.addAnalytics({
+          userId: user!.uid,
+          date: new Date(),
+          revenue: calculatedRevenue,
+          production: qty,
+          efficiency: 75,
+          costs: calculatedCost,
+          type: 'daily'
+        });
+      }
+
+      setSaving(false);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Order updated successfully!",
+        });
+        setDialogOpen(false);
+        resetForm();
+      }
     } else {
-      toast({
-        title: "Success",
-        description: "Order created successfully!",
+      // Create new order
+      const { id, error } = await productionService.createOrder({
+        userId: user!.uid,
+        orderId,
+        customer,
+        product,
+        quantity: parseInt(quantity),
+        status,
+        dueDate: new Date(dueDate),
       });
-      setDialogOpen(false);
-      // Reset form
-      setOrderId("");
-      setCustomer("");
-      setProduct("");
-      setQuantity("");
-      setStatus("pending");
-      setDueDate("");
+
+      // Auto-create analytics data
+      if (!error && (unitPrice || unitCost)) {
+        const qty = parseInt(quantity);
+        const calculatedRevenue = unitPrice ? parseFloat(unitPrice) * qty : 0;
+        const calculatedCost = unitCost ? parseFloat(unitCost) * qty : 0;
+        
+        await analyticsService.addAnalytics({
+          userId: user!.uid,
+          date: new Date(),
+          revenue: calculatedRevenue,
+          production: qty,
+          efficiency: 75,
+          costs: calculatedCost,
+          type: 'daily'
+        });
+        
+        // Auto-create a default machine if none exist
+        const { machines: existingMachines } = await analyticsService.getMachines(user!.uid);
+        if (!existingMachines || existingMachines.length === 0) {
+          await analyticsService.updateMachine({
+            userId: user!.uid,
+            machineName: 'Primary Resource',
+            efficiency: 75,
+            capacity: 100,
+            used: qty,
+            status: 'operational'
+          });
+        }
+        
+        // Auto-create default equipment if none exist
+        const { equipment: existingEquipment } = await infrastructureService.getEquipment(user!.uid);
+        if (!existingEquipment || existingEquipment.length === 0) {
+          await infrastructureService.addEquipment({
+            userId: user!.uid,
+            name: 'Primary Equipment',
+            age: 'New',
+            condition: 'Good',
+            efficiency: 75,
+            status: 'operational'
+          });
+        }
+      }
+
+      setSaving(false);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Order created successfully!",
+        });
+        setDialogOpen(false);
+        resetForm();
+      }
     }
   };
 
@@ -139,10 +264,13 @@ const Production = () => {
     <DashboardLayout>
     <div className="mb-6 flex items-center justify-between">
       <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">Production Planning</h1>
-        <p className="text-sm text-muted-foreground">Manage schedules, capacity, and orders</p>
+        <h1 className="font-display text-2xl font-bold text-foreground">Operations Management</h1>
+        <p className="text-sm text-muted-foreground">Manage schedules, capacity, and orders/projects</p>
       </div>
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) resetForm();
+      }}>
         <DialogTrigger asChild>
           <Button className="gradient-primary text-primary-foreground border-0 gap-2">
             <Plus className="h-4 w-4" /> New Order
@@ -150,32 +278,33 @@ const Production = () => {
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Production Order</DialogTitle>
+            <DialogTitle>{editingOrder ? "Edit Work Order" : "Create Work Order"}</DialogTitle>
+            <DialogDescription>Fill in the details for your work order or project</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="orderId">Order ID *</Label>
+              <Label htmlFor="orderId">Order/Project ID *</Label>
               <Input
                 id="orderId"
-                placeholder="e.g., ORD-2026-001"
+                placeholder="e.g., WO-2026-001 or PRJ-001"
                 value={orderId}
                 onChange={(e) => setOrderId(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="customer">Customer Name *</Label>
+              <Label htmlFor="customer">Client/Customer *</Label>
               <Input
                 id="customer"
-                placeholder="e.g., ABC Industries"
+                placeholder="e.g., ABC Corporation"
                 value={customer}
                 onChange={(e) => setCustomer(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="product">Product *</Label>
+              <Label htmlFor="product">Deliverable/Product *</Label>
               <Input
                 id="product"
-                placeholder="e.g., Steel Components"
+                placeholder="e.g., Web App, Steel Parts"
                 value={product}
                 onChange={(e) => setProduct(e.target.value)}
               />
@@ -213,6 +342,50 @@ const Production = () => {
                 onChange={(e) => setDueDate(e.target.value)}
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="unitPrice">Unit Price (₹)</Label>
+                <Input
+                  id="unitPrice"
+                  type="number"
+                  min="0"
+                  placeholder="e.g., 500"
+                  value={unitPrice}
+                  onChange={(e) => setUnitPrice(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="unitCost">Unit Cost (₹)</Label>
+                <Input
+                  id="unitCost"
+                  type="number"
+                  min="0"
+                  placeholder="e.g., 300"
+                  value={unitCost}
+                  onChange={(e) => setUnitCost(e.target.value)}
+                />
+              </div>
+            </div>
+            {unitPrice && quantity && (
+              <div className="rounded-lg bg-accent/50 p-3 space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total Revenue:</span>
+                  <span className="font-semibold text-foreground">₹{(parseFloat(unitPrice) * parseInt(quantity || "0")).toLocaleString()}</span>
+                </div>
+                {unitCost && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Total Cost:</span>
+                      <span className="font-semibold text-foreground">₹{(parseFloat(unitCost) * parseInt(quantity || "0")).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm pt-1 border-t border-border">
+                      <span className="text-muted-foreground">Profit:</span>
+                      <span className="font-semibold text-success">₹{((parseFloat(unitPrice) - parseFloat(unitCost)) * parseInt(quantity || "0")).toLocaleString()}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
@@ -223,7 +396,7 @@ const Production = () => {
               onClick={handleCreateOrder}
               disabled={saving}
             >
-              {saving ? "Creating..." : "Create Order"}
+              {saving ? (editingOrder ? "Updating..." : "Creating...") : (editingOrder ? "Update Order" : "Create Order")}
             </Button>
           </div>
         </DialogContent>
@@ -231,11 +404,10 @@ const Production = () => {
     </div>
 
     {/* Quick Stats */}
-    <div className="mb-6 grid gap-4 sm:grid-cols-4">
+    <div className="mb-6 grid gap-4 sm:grid-cols-3">
       {[
         { label: "Active Orders", value: stats.activeOrders.toString(), icon: Package, color: "text-info" },
-        { label: "Machines Running", value: stats.machinesRunning, icon: Wrench, color: "text-success" },
-        { label: "Workers On Shift", value: "42", icon: Users, color: "text-primary" },
+        { label: "Resources Available", value: stats.machinesRunning, icon: Wrench, color: "text-success" },
         { label: "Due This Week", value: stats.dueThisWeek.toString(), icon: Clock, color: "text-secondary" },
       ].map((s, i) => (
         <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
@@ -254,32 +426,56 @@ const Production = () => {
       <div className="rounded-xl border border-border bg-card p-6 shadow-card">
         <h3 className="font-display text-lg font-semibold text-foreground mb-4">Machine Capacity vs Usage</h3>
         <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={capacityData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 89%)" />
-              <XAxis dataKey="machine" tick={{ fontSize: 11, fill: "hsl(220, 10%, 46%)" }} />
-              <YAxis tick={{ fontSize: 11, fill: "hsl(220, 10%, 46%)" }} />
-              <Tooltip />
-              <Bar dataKey="capacity" fill="hsl(220, 14%, 92%)" radius={[4, 4, 0, 0]} name="Total Capacity" />
-              <Bar dataKey="used" fill="hsl(230, 65%, 28%)" radius={[4, 4, 0, 0]} name="Used" />
-            </BarChart>
-          </ResponsiveContainer>
+          {capacityData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={capacityData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 89%)" />
+                <XAxis dataKey="machine" tick={{ fontSize: 11, fill: "hsl(220, 10%, 46%)" }} />
+                <YAxis tick={{ fontSize: 11, fill: "hsl(220, 10%, 46%)" }} />
+                <Tooltip />
+                <Bar dataKey="capacity" fill="hsl(220, 14%, 92%)" radius={[4, 4, 0, 0]} name="Total Capacity" />
+                <Bar dataKey="used" fill="hsl(230, 65%, 28%)" radius={[4, 4, 0, 0]} name="Used" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              No machine data yet. Add machines in Analytics section.
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Bottlenecks */}
+      {/* Quick Actions */}
       <div className="rounded-xl border border-border bg-card p-6 shadow-card">
-        <div className="mb-4 flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-secondary" />
-          <h3 className="font-display text-lg font-semibold text-foreground">AI Bottleneck Detection</h3>
-        </div>
+        <h3 className="font-display text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
         <div className="space-y-3">
-          {bottlenecks.map((b, i) => (
-            <div key={i} className={`rounded-lg border p-4 ${b.severity === "high" ? "border-destructive/30 bg-destructive/5" : "border-warning/30 bg-warning/5"}`}>
-              <p className="font-medium text-sm text-foreground">{b.area}</p>
-              <p className="text-sm text-muted-foreground mt-1">{b.issue}</p>
-            </div>
-          ))}
+          <Link to="/dashboard/analytics">
+            <button className="w-full flex items-start gap-3 rounded-lg border border-border p-4 hover:border-primary transition-colors text-left">
+              <BarChart3 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium text-sm text-foreground">Add Analytics Data</p>
+                <p className="text-sm text-muted-foreground mt-1">Track revenue, costs, and performance metrics</p>
+              </div>
+            </button>
+          </Link>
+          <Link to="/dashboard/infrastructure">
+            <button className="w-full flex items-start gap-3 rounded-lg border border-border p-4 hover:border-primary transition-colors text-left">
+              <Building2 className="h-5 w-5 text-info mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium text-sm text-foreground">Manage Equipment</p>
+                <p className="text-sm text-muted-foreground mt-1">Add and track machines, tools, and resources</p>
+              </div>
+            </button>
+          </Link>
+          <Link to="/dashboard/ai-advisor">
+            <button className="w-full flex items-start gap-3 rounded-lg border border-border p-4 hover:border-primary transition-colors text-left">
+              <Brain className="h-5 w-5 text-secondary mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium text-sm text-foreground">Ask AI Advisor</p>
+                <p className="text-sm text-muted-foreground mt-1">Get recommendations and insights</p>
+              </div>
+            </button>
+          </Link>
         </div>
       </div>
     </div>
@@ -287,7 +483,7 @@ const Production = () => {
     {/* Order Table */}
     <div className="rounded-xl border border-border bg-card shadow-card">
       <div className="flex items-center justify-between border-b border-border p-4">
-        <h3 className="font-display text-lg font-semibold text-foreground">Order Tracking</h3>
+        <h3 className="font-display text-lg font-semibold text-foreground">Work Orders</h3>
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">March 2026</span>
@@ -297,18 +493,19 @@ const Production = () => {
         <TableHeader>
           <TableRow>
             <TableHead>Order ID</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Product</TableHead>
-            <TableHead>Qty</TableHead>
+            <TableHead>Client</TableHead>
+            <TableHead>Deliverable</TableHead>
+            <TableHead>Qty/Units</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Due Date</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {orders.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                No orders yet. Click "New Order" to create your first order.
+              <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                No orders yet. Click "New Order" to create your first work order.
               </TableCell>
             </TableRow>
           ) : (
@@ -320,6 +517,24 @@ const Production = () => {
                 <TableCell>{o.quantity}</TableCell>
                 <TableCell>{statusBadge(o.status)}</TableCell>
                 <TableCell>{new Date(o.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openEditDialog(o)}
+                      className="p-1 hover:bg-accent rounded"
+                      title="Edit"
+                    >
+                      <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(o.id!)}
+                      className="p-1 hover:bg-destructive/10 rounded"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                    </button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))
           )}

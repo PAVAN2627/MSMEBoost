@@ -1,0 +1,70 @@
+FIREBASE SECURITY RULES UPDATE INSTRUCTIONS
+============================================
+
+Your MSMEBoost platform now has complete Firestore security rules that need to be published to Firebase Console.
+
+COLLECTIONS COVERED:
+-------------------
+1. production_orders - Production/Operations orders
+2. analytics - Analytics and performance data
+3. machines - Machine/resource data
+4. equipment - Infrastructure equipment
+5. infrastructure_scores - Infrastructure assessment scores
+6. innovation_projects - Innovation and R&D projects
+7. sustainability - Sustainability and environmental data
+8. users - User profile information
+9. chat_history - AI Advisor conversation history (NEW)
+10. government_schemes - Saved government scheme searches (NEW)
+
+HOW TO UPDATE RULES:
+-------------------
+1. Go to Firebase Console: https://console.firebase.google.com/
+2. Select your project: udyog-ai
+3. Click on "Firestore Database" in the left sidebar
+4. Click on the "Rules" tab at the top
+5. Copy the ENTIRE content from the file "firestore.rules" in your project root
+6. Paste it into the Firebase Console rules editor (replace all existing content)
+7. Click "Publish" button
+
+WHAT THE RULES DO:
+-----------------
+✅ Users can only read/write their own data (userId-based security)
+✅ All operations require authentication
+✅ Separate permissions for create, read, update, and delete
+✅ Helper functions for cleaner rule definitions
+✅ Covers all 10 collections used by MSMEBoost
+
+SECURITY FEATURES:
+-----------------
+- Users CANNOT access other users' data
+- Unauthenticated users CANNOT access any data
+- Each document is protected by userId field
+- Create operations validate userId matches authenticated user
+- Read/Update/Delete operations check document ownership
+
+IMPORTANT NOTES:
+---------------
+⚠️ You MUST publish these rules for the following features to work:
+   - Sustainability data edit/delete
+   - AI Advisor chat history save/load
+   - Government schemes search history save/load
+   - All other CRUD operations
+
+⚠️ Without these rules, you'll get "insufficient permissions" errors
+
+⚠️ Make sure to publish the rules EXACTLY as shown in firestore.rules file
+
+VERIFICATION:
+------------
+After publishing, test by:
+1. Adding a sustainability record
+2. Saving an AI chat conversation
+3. Saving a government schemes search
+4. Editing/deleting any record
+
+All operations should work without permission errors.
+
+============================================
+Last Updated: March 7, 2026
+Project: MSMEBoost (udyog-ai)
+============================================

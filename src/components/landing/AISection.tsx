@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Brain, Sparkles, Target, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const aiFeatures = [
   {
@@ -26,7 +26,10 @@ const aiFeatures = [
   }
 ];
 
-const AISection = () => (
+const AISection = () => {
+  const navigate = useNavigate();
+
+  return (
   <section id="ai" className="py-20 lg:py-28">
     <div className="container mx-auto px-4">
       <motion.div
@@ -88,11 +91,13 @@ const AISection = () => (
                 "Which machines should I upgrade first?"
               </div>
             </div>
-            <Link to="/register">
-              <Button size="lg" className="gradient-accent text-secondary-foreground border-0">
-                Try AI Advisor Free
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              className="gradient-accent text-secondary-foreground border-0"
+              onClick={() => navigate('/register')}
+            >
+              Try AI Advisor Free
+            </Button>
           </div>
           <div className="rounded-xl bg-background/10 backdrop-blur-sm p-8 text-center">
             <div className="text-7xl mb-4">🤖</div>
@@ -105,5 +110,6 @@ const AISection = () => (
     </div>
   </section>
 );
+};
 
 export default AISection;

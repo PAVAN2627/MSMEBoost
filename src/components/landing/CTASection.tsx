@@ -1,9 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-const CTASection = () => (
+const CTASection = () => {
+  const navigate = useNavigate();
+
+  return (
   <section className="py-20 lg:py-28">
     <div className="container mx-auto px-4">
       <motion.div
@@ -18,17 +21,17 @@ const CTASection = () => (
         <p className="mt-4 text-primary-foreground/70">
           Join thousands of businesses already using AI-powered insights to grow smarter.
         </p>
-        <Link to="/dashboard">
-          <Button
-            size="lg"
-            className="mt-8 gradient-accent text-secondary-foreground border-0 gap-2 shadow-glow"
-          >
-            Get Started Free <ArrowRight className="h-4 w-4" />
-          </Button>
-        </Link>
+        <Button
+          size="lg"
+          className="mt-8 gradient-accent text-secondary-foreground border-0 gap-2 shadow-glow"
+          onClick={() => navigate('/register')}
+        >
+          Get Started Free <ArrowRight className="h-4 w-4" />
+        </Button>
       </motion.div>
     </div>
   </section>
 );
+};
 
 export default CTASection;

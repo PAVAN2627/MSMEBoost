@@ -16,6 +16,7 @@ import Sustainability from "./pages/Sustainability";
 import Reports from "./pages/Reports";
 import Notifications from "./pages/Notifications";
 import Schemes from "./pages/Schemes";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/dashboard/reports" element={<Reports />} />
           <Route path="/dashboard/notifications" element={<Notifications />} />
           <Route path="/dashboard/schemes" element={<Schemes />} />
+          <Route path="/dashboard/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

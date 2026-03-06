@@ -26,6 +26,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { productionService } from "@/services/productionService";
 import { analyticsService } from "@/services/analyticsService";
+import { infrastructureService } from "@/services/infrastructureService";
 import { Link } from "react-router-dom";
 
 const Dashboard = () => {
@@ -34,6 +35,7 @@ const Dashboard = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [machines, setMachines] = useState<any[]>([]);
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
+  const [equipment, setEquipment] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -52,6 +54,10 @@ const Dashboard = () => {
       const { data } = await analyticsService.getAnalytics(user.uid, 'daily', 30);
       if (data) setAnalyticsData(data);
 
+      // Fetch equipment for infrastructure score
+      const { equipment: equipmentData } = await infrastructureService.getEquipment(user.uid);
+      if (equipmentData) setEquipment(equipmentData);
+
       setLoading(false);
       return ordersUnsub;
     };
@@ -66,6 +72,21 @@ const Dashboard = () => {
   const totalRevenue = analyticsData.reduce((sum, d) => sum + (d.revenue || 0), 0);
   const avgEfficiency = analyticsData.length > 0 
     ? analyticsData.reduce((sum, d) => sum + (d.efficiency || 0), 0) / analyticsData.length 
+    : 0;
+
+  // Calculate infrastructure score dynamically
+  const operationalCount = equipment.filter(e => e.status === 'operational').length;
+  const avgEquipmentEfficiency = equipment.length > 0 
+    ? Math.round(equipment.reduce((sum, e) => sum + e.efficiency, 0) / equipment.length)
+    : 0;
+  const conditionScore = equipment.length > 0
+    ? Math.round(equipment.reduce((sum, e) => {
+        const conditionValue = { 'Excellent': 100, 'Good': 75, 'Fair': 50, 'Poor': 25 };
+        return sum + (conditionValue[e.condition] || 50);
+      }, 0) / equipment.length)
+    : 0;
+  const infrastructureScore = equipment.length > 0
+    ? Math.round((avgEquipmentEfficiency * 0.4) + (conditionScore * 0.3) + ((operationalCount / equipment.length) * 100 * 0.3))
     : 0;
 
   const revenueData = analyticsData.length > 0 
@@ -84,7 +105,7 @@ const Dashboard = () => {
   const kpis = [
     { 
       label: "Monthly Revenue", 
-      value: totalRevenue > 0 ? `₹${(totalRevenue / 100000).toFixed(1)}L` : "₹0", 
+      value: totalRevenue > 100000 ? `₹${(totalRevenue / 100000).toFixed(1)}L` : totalRevenue > 0 ? `₹${totalRevenue.toLocaleString()}` : "₹0", 
       change: "+0%", 
       up: true, 
       icon: IndianRupee, 
@@ -279,7 +300,7 @@ const Dashboard = () => {
                 <div className="space-y-5">
                   {[
                     { label: "Production Efficiency", score: avgEfficiency > 0 ? Math.round(avgEfficiency) : 0, color: "bg-primary" },
-                    { label: "Infrastructure Health", score: 0, color: "bg-secondary" },
+                    { label: "Infrastructure Health", score: infrastructureScore, color: "bg-secondary" },
                     { label: "Innovation Score", score: 0, color: "bg-info" },
                     { label: "Sustainability Index", score: 0, color: "bg-success" },
                   ].map((s) => (

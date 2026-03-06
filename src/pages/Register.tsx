@@ -8,6 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { userProfileService } from "@/services/userProfileService";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -15,6 +16,19 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
+  
+  // Step 1 fields
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [role, setRole] = useState("owner");
+  
+  // Step 2 fields
+  const [companyName, setCompanyName] = useState("");
+  const [industry, setIndustry] = useState("manufacturing");
+  const [companySize, setCompanySize] = useState("small");
+  const [location, setLocation] = useState("");
+  const [businessType, setBusinessType] = useState("manufacturing");
+  
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signUp } = useAuth();
@@ -28,18 +42,40 @@ const Register = () => {
     
     setLoading(true);
     const { user, error } = await signUp(email, password);
-    setLoading(false);
     
     if (error) {
+      setLoading(false);
       toast({ 
         title: "Registration failed", 
         description: error,
         variant: "destructive"
       });
-    } else {
-      toast({ title: "Account created!", description: "Welcome to MSMEBoost." });
-      navigate("/dashboard");
+      return;
     }
+    
+    // Save user profile to Firestore
+    if (user) {
+      const profileError = await userProfileService.createProfile({
+        userId: user.uid,
+        firstName,
+        lastName,
+        email,
+        role,
+        companyName,
+        industry,
+        companySize,
+        location,
+        businessType
+      });
+      
+      if (profileError.error) {
+        console.error('Error saving profile:', profileError.error);
+      }
+    }
+    
+    setLoading(false);
+    toast({ title: "Account created!", description: "Welcome to MSMEBoost." });
+    navigate("/dashboard");
   };
 
   return (
@@ -79,11 +115,25 @@ const Register = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">First name</Label>
-                    <Input id="firstName" placeholder="Rajesh" className="mt-1.5" required />
+                    <Input 
+                      id="firstName" 
+                      placeholder="Rajesh" 
+                      className="mt-1.5" 
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required 
+                    />
                   </div>
                   <div>
                     <Label htmlFor="lastName">Last name</Label>
-                    <Input id="lastName" placeholder="Kumar" className="mt-1.5" required />
+                    <Input 
+                      id="lastName" 
+                      placeholder="Kumar" 
+                      className="mt-1.5"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required 
+                    />
                   </div>
                 </div>
                 <div>
@@ -118,7 +168,7 @@ const Register = () => {
                 </div>
                 <div>
                   <Label htmlFor="role">Your role</Label>
-                  <Select defaultValue="owner">
+                  <Select value={role} onValueChange={setRole}>
                     <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="owner">MSME Owner</SelectItem>
@@ -132,11 +182,18 @@ const Register = () => {
               <>
                 <div>
                   <Label htmlFor="companyName">Company name</Label>
-                  <Input id="companyName" placeholder="Kumar Industries Pvt Ltd" className="mt-1.5" required />
+                  <Input 
+                    id="companyName" 
+                    placeholder="Kumar Industries Pvt Ltd" 
+                    className="mt-1.5"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    required 
+                  />
                 </div>
                 <div>
                   <Label htmlFor="industry">Industry type</Label>
-                  <Select defaultValue="manufacturing">
+                  <Select value={industry} onValueChange={setIndustry}>
                     <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="manufacturing">Manufacturing</SelectItem>
@@ -161,7 +218,7 @@ const Register = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="companySize">Company size</Label>
-                    <Select defaultValue="small">
+                    <Select value={companySize} onValueChange={setCompanySize}>
                       <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="micro">Micro (1-10)</SelectItem>
@@ -172,12 +229,19 @@ const Register = () => {
                   </div>
                   <div>
                     <Label htmlFor="location">Location</Label>
-                    <Input id="location" placeholder="Pune, MH" className="mt-1.5" required />
+                    <Input 
+                      id="location" 
+                      placeholder="Pune, MH" 
+                      className="mt-1.5"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      required 
+                    />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="businessType">Business type</Label>
-                  <Select defaultValue="manufacturing">
+                  <Select value={businessType} onValueChange={setBusinessType}>
                     <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="manufacturing">Manufacturing</SelectItem>
