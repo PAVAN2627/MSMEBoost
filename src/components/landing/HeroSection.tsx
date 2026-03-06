@@ -9,13 +9,14 @@ const HeroSection = () => {
 
   return (
     <section className="relative overflow-hidden pt-16">
-      <div className="absolute inset-0 gradient-hero opacity-[0.03]" />
+      <div className="absolute inset-0 gradient-hero opacity-[0.03] pointer-events-none" />
       <div className="container mx-auto px-4 py-20 lg:py-32">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
+            style={{ pointerEvents: 'auto' }}
           >
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-secondary/30 bg-secondary/10 px-4 py-1.5">
               <Zap className="h-3.5 w-3.5 text-secondary" />
@@ -30,16 +31,11 @@ const HeroSection = () => {
             <p className="mt-6 max-w-lg text-lg text-muted-foreground leading-relaxed">
               Whether you're manufacturing products or delivering services — plan operations, track performance, discover innovations, and get AI recommendations in one intelligent platform built for Indian MSMEs.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4 relative z-10">
+            <div className="mt-8 flex flex-wrap gap-4">
               <Button 
-                type="button"
                 size="lg" 
-                className="gradient-primary text-primary-foreground border-0 gap-2 shadow-card-lg cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  console.log('Button clicked!');
-                  navigate('/register');
-                }}
+                className="gradient-primary text-primary-foreground border-0 gap-2 shadow-card-lg"
+                onClick={() => navigate('/register')}
               >
                 Start Free <ArrowRight className="h-4 w-4" />
               </Button>
