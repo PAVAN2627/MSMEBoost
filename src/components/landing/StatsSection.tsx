@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
 
 const stats = [
-  { value: "6.3 Cr+", label: "MSMEs in India" },
-  { value: "30%", label: "GDP Contribution" },
-  { value: "11 Cr+", label: "Jobs Created" },
-  { value: "45%", label: "Manufacturing Output" },
+  { value: "7.47 Cr+", label: "MSMEs in India" },
+  { value: "31.1%", label: "GDP Contribution" },
+  { value: "32.82 Cr+", label: "Jobs Created" },
+  { value: "35.4%", label: "Manufacturing Output" },
 ];
 
 const StatsSection = () => (
